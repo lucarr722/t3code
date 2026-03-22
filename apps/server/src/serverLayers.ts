@@ -35,6 +35,7 @@ import { GitServiceLive } from "./git/Layers/GitService";
 import { BunPtyAdapterLive } from "./terminal/Layers/BunPTY";
 import { NodePtyAdapterLive } from "./terminal/Layers/NodePTY";
 import { AnalyticsService } from "./telemetry/Services/AnalyticsService";
+import { CodeGraphAnalyzerLive } from "./codeGraph/Layers/CodeGraphAnalyzer";
 
 export function makeServerProviderLayer(): Layer.Layer<
   ProviderService,
@@ -128,5 +129,6 @@ export function makeServerRuntimeServicesLayer() {
     gitManagerLayer,
     terminalLayer,
     KeybindingsLive,
+    CodeGraphAnalyzerLive,
   ).pipe(Layer.provideMerge(NodeServices.layer));
 }

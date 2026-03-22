@@ -58,6 +58,7 @@ import { ProviderHealth } from "./provider/Services/ProviderHealth";
 import { CheckpointDiffQuery } from "./checkpointing/Services/CheckpointDiffQuery";
 import { clamp } from "effect/Number";
 import { Open, resolveAvailableEditors } from "./open";
+import { CodeGraphAnalyzer } from "./codeGraph/Services/CodeGraphAnalyzer";
 import { ServerConfig } from "./config";
 import { GitCore } from "./git/Services/GitCore.ts";
 import { tryHandleProjectFaviconRequest } from "./projectFaviconRoute";
@@ -217,7 +218,8 @@ export type ServerRuntimeServices =
   | TerminalManager
   | Keybindings
   | Open
-  | AnalyticsService;
+  | AnalyticsService
+  | CodeGraphAnalyzer;
 
 export class ServerLifecycleError extends Schema.TaggedErrorClass<ServerLifecycleError>()(
   "ServerLifecycleError",
@@ -255,6 +257,7 @@ export const createServer = Effect.fn(function* (): Effect.fn.Return<
   const keybindingsManager = yield* Keybindings;
   const providerHealth = yield* ProviderHealth;
   const git = yield* GitCore;
+  const codeGraphAnalyzer = yield* CodeGraphAnalyzer;
   const fileSystem = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
 
@@ -881,6 +884,16 @@ export const createServer = Effect.fn(function* (): Effect.fn.Return<
         const body = stripRequestTag(request.body);
         const keybindingsConfig = yield* keybindingsManager.upsertKeybindingRule(body);
         return { keybindings: keybindingsConfig, issues: [] };
+      }
+
+      case WS_METHODS.codeGraphAnalyze: {
+        const body = stripRequestTag(request.body);
+        return yield* codeGraphAnalyzer.analyze(body);
+      }
+
+      case WS_METHODS.codeGraphSearchFunctions: {
+        const body = stripRequestTag(request.body);
+        return yield* codeGraphAnalyzer.searchFunctions(body);
       }
 
       default: {

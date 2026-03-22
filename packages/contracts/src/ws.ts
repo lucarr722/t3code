@@ -37,6 +37,7 @@ import { KeybindingRule } from "./keybindings";
 import { ProjectSearchEntriesInput, ProjectWriteFileInput } from "./project";
 import { OpenInEditorInput } from "./editor";
 import { ServerConfigUpdatedPayload } from "./server";
+import { CodeGraphAnalyzeInput, CodeGraphSearchFunctionsInput } from "./codeGraph";
 
 // ── WebSocket RPC Method Names ───────────────────────────────────────
 
@@ -75,6 +76,10 @@ export const WS_METHODS = {
   // Server meta
   serverGetConfig: "server.getConfig",
   serverUpsertKeybinding: "server.upsertKeybinding",
+
+  // Code graph methods
+  codeGraphAnalyze: "codeGraph.analyze",
+  codeGraphSearchFunctions: "codeGraph.searchFunctions",
 } as const;
 
 // ── Push Event Channels ──────────────────────────────────────────────
@@ -139,6 +144,10 @@ const WebSocketRequestBody = Schema.Union([
   // Server meta
   tagRequestBody(WS_METHODS.serverGetConfig, Schema.Struct({})),
   tagRequestBody(WS_METHODS.serverUpsertKeybinding, KeybindingRule),
+
+  // Code graph methods
+  tagRequestBody(WS_METHODS.codeGraphAnalyze, CodeGraphAnalyzeInput),
+  tagRequestBody(WS_METHODS.codeGraphSearchFunctions, CodeGraphSearchFunctionsInput),
 ]);
 
 export const WebSocketRequest = Schema.Struct({

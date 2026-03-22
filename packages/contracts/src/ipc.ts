@@ -46,6 +46,12 @@ import type {
   OrchestrationReadModel,
 } from "./orchestration";
 import { EditorId } from "./editor";
+import type {
+  CodeGraphAnalyzeInput,
+  CodeGraphAnalyzeResult,
+  CodeGraphSearchFunctionsInput,
+  CodeGraphSearchFunctionsResult,
+} from "./codeGraph";
 
 export interface ContextMenuItem<T extends string = string> {
   id: T;
@@ -159,6 +165,12 @@ export interface NativeApi {
   server: {
     getConfig: () => Promise<ServerConfig>;
     upsertKeybinding: (input: ServerUpsertKeybindingInput) => Promise<ServerUpsertKeybindingResult>;
+  };
+  codeGraph: {
+    analyze: (input: CodeGraphAnalyzeInput) => Promise<CodeGraphAnalyzeResult>;
+    searchFunctions: (
+      input: CodeGraphSearchFunctionsInput,
+    ) => Promise<CodeGraphSearchFunctionsResult>;
   };
   orchestration: {
     getSnapshot: () => Promise<OrchestrationReadModel>;
