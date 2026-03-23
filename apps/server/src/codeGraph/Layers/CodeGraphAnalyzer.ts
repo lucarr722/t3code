@@ -162,13 +162,20 @@ interface ParsedFile {
   functions: ExtractedFunction[];
 }
 
-/** Lazily initialized web-tree-sitter Parser class. */
-let ParserClass: typeof import("web-tree-sitter").Parser | null = null;
+/** Lazily initialized web-tree-sitter Parser class (0.24.x API). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let ParserClass: any = null;
 
 async function getParserClass() {
   if (!ParserClass) {
+    // web-tree-sitter 0.24.x: The module export varies by context.
+    // Use dynamic import and resolve the constructor from whatever shape we get.
     const mod = await import("web-tree-sitter");
-    ParserClass = mod.Parser;
+    const candidate = (mod as any).default ?? mod;
+    ParserClass = typeof candidate === "function" ? candidate : (candidate as any).default;
+    if (typeof ParserClass !== "function") {
+      throw new Error(`[codeGraph] Failed to resolve Parser constructor from web-tree-sitter`);
+    }
     await ParserClass.init();
   }
   return ParserClass;
@@ -187,17 +194,22 @@ async function parseFile(
     return null;
   }
 
-  const Parser = await getParserClass();
-  const parser = new Parser();
-  parser.setLanguage(handler.grammar);
-  const tree = parser.parse(source);
-  if (!tree) return null;
+  try {
+    const Parser = await getParserClass();
+    const parser = new Parser();
+    parser.setLanguage(handler.grammar);
+    const tree = parser.parse(source);
+    if (!tree) return null;
 
-  return {
-    filePath: relativePath,
-    language: handler.languageName,
-    functions: handler.extractFunctions(tree.rootNode),
-  };
+    return {
+      filePath: relativePath,
+      language: handler.languageName,
+      functions: handler.extractFunctions(tree.rootNode),
+    };
+  } catch (e) {
+    console.error(`[codeGraph] failed to parse ${relativePath}:`, e);
+    return null;
+  }
 }
 
 // ── Index Building ──────────────────────────────────────────────────
@@ -208,6 +220,7 @@ async function buildProjectIndex(
 ): Promise<ProjectIndex> {
   const files = await discoverSourceFiles(cwd, includePattern);
   const truncated = files.length >= MAX_SOURCE_FILES;
+  console.log(`[codeGraph] discovered ${files.length} source files in ${cwd}`);
 
   // Parse all files
   const parsedFiles: ParsedFile[] = [];
@@ -226,6 +239,8 @@ async function buildProjectIndex(
       if (r) parsedFiles.push(r);
     }
   }
+
+  console.log(`[codeGraph] parsed ${parsedFiles.length}/${files.length} files successfully`);
 
   // Build function index
   const functions = new Map<string, FunctionIndex>();
@@ -285,6 +300,8 @@ async function buildProjectIndex(
     func.degree = func.calls.length + func.calledBy.length;
   }
 
+  console.log(`[codeGraph] index built: ${functions.size} functions, ${nameToIds.size} unique names`);
+
   return {
     scannedAt: Date.now(),
     functions,
@@ -310,11 +327,16 @@ async function getOrBuildIndex(
   const inflight = inFlightBuilds.get(cacheKey);
   if (inflight) return inflight;
 
-  const buildPromise = buildProjectIndex(cwd, includePattern).then((index) => {
-    projectCache.set(cacheKey, index);
-    inFlightBuilds.delete(cacheKey);
-    return index;
-  });
+  const buildPromise = buildProjectIndex(cwd, includePattern)
+    .then((index) => {
+      projectCache.set(cacheKey, index);
+      inFlightBuilds.delete(cacheKey);
+      return index;
+    })
+    .catch((err) => {
+      inFlightBuilds.delete(cacheKey);
+      throw err;
+    });
   inFlightBuilds.set(cacheKey, buildPromise);
   return buildPromise;
 }

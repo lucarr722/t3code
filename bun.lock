@@ -56,7 +56,7 @@
         "node-pty": "^1.1.0",
         "open": "^10.1.0",
         "tree-sitter-wasms": "^0.1.13",
-        "web-tree-sitter": "^0.26.7",
+        "web-tree-sitter": "0.24.5",
         "ws": "^8.18.0",
       },
       "devDependencies": {
@@ -2059,7 +2059,7 @@
 
     "web-namespaces": ["web-namespaces@2.0.1", "", {}, "sha512-bKr1DkiNa2krS7qxNtdrtHAmzuYGFQLiQ13TsorsdT6ULTkPLKuu5+GsFpDlg6JFjUTwX2DyhMPG2be8uPrqsQ=="],
 
-    "web-tree-sitter": ["web-tree-sitter@0.26.7", "", {}, "sha512-KiZhelTvBA/ziUHEO7Emb75cGVAq8iGZNabYaZm53Zpy50NsXyOW+xSHlwHt5CVg/TRPZBfeVLTTobF0LjFJ1w=="],
+    "web-tree-sitter": ["web-tree-sitter@0.24.5", "", {}, "sha512-+J/2VSHN8J47gQUAvF8KDadrfz6uFYVjxoxbKWDoXVsH2u7yLdarCnIURnrMA6uSRkgX3SdmqM5BOoQjPdSh5w=="],
 
     "webpack-virtual-modules": ["webpack-virtual-modules@0.6.2", "", {}, "sha512-66/V2i5hQanC51vBQKPH4aI8NMAcBW59FVBs+rC7eGHupMyfn34q7rZIE+ETlJ+XTevqfUhVVBgSUNSW2flEUQ=="],
 

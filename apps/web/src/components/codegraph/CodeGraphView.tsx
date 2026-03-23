@@ -192,6 +192,17 @@ export function CodeGraphView() {
           <ScrollArea className="flex-1">
             {!activeCwd ? (
               <CodeGraphEmptyState hasProject={false} isLoading={false} />
+            ) : analyzeQuery.isError ? (
+              <div className="flex flex-1 items-center justify-center p-8">
+                <div className="max-w-md text-center">
+                  <p className="text-sm font-medium text-destructive">Analysis failed</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {analyzeQuery.error instanceof Error
+                      ? analyzeQuery.error.message
+                      : String(analyzeQuery.error)}
+                  </p>
+                </div>
+              </div>
             ) : analyzeQuery.isLoading && !analyzeQuery.data ? (
               <CodeGraphEmptyState hasProject={true} isLoading={true} />
             ) : mermaidSource ? (

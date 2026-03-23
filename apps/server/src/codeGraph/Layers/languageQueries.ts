@@ -9,9 +9,15 @@
  * 3. Parse import statements for cross-file resolution
  */
 import { createRequire } from "node:module";
-import type { Node as TSNode, Language as TSLanguage } from "web-tree-sitter";
 
 const require = createRequire(import.meta.url);
+
+// web-tree-sitter 0.24.x: CJS default export is the Parser class.
+// Parser.Language is available only after Parser.init().
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TSNode = any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TSLanguage = any;
 
 export type FunctionKind = "function" | "method" | "arrow" | "constructor" | "class";
 
@@ -248,7 +254,7 @@ function makeTsJsExtractors() {
 
       for (const node of collectNodesByType(rootNode, ["import_statement"])) {
         const source = getChildByField(node, "source")?.text?.replace(/['"]/g, "") ?? "";
-        const clause = node.children.find((c) => c.type === "import_clause");
+        const clause = node.children.find((c: TSNode) => c.type === "import_clause");
         if (!clause) continue;
 
         for (const child of clause.children) {
@@ -274,7 +280,12 @@ function makeTsJsExtractors() {
 // ── WASM grammar loading ────────────────────────────────────────────
 
 function resolveWasmPath(grammarName: string): string {
-  return require.resolve(`tree-sitter-wasms/out/tree-sitter-${grammarName}.wasm`);
+  const { join, dirname } = require("node:path");
+  return join(
+    dirname(require.resolve("tree-sitter-wasms/package.json")),
+    "out",
+    `tree-sitter-${grammarName}.wasm`,
+  );
 }
 
 let _handlersPromise: Promise<LanguageHandler[]> | null = null;
@@ -287,9 +298,16 @@ export async function getLanguageHandlers(): Promise<LanguageHandler[]> {
 }
 
 async function loadLanguageHandlers(): Promise<LanguageHandler[]> {
-  const { Parser, Language } = await import("web-tree-sitter");
+  // web-tree-sitter 0.24.x: resolve the Parser constructor from whatever shape the module exports.
+  const mod = await import("web-tree-sitter");
+  const candidate = (mod as any).default ?? mod;
+  const Parser = typeof candidate === "function" ? candidate : (candidate as any).default;
+  if (typeof Parser !== "function") {
+    throw new Error("[codeGraph] Failed to resolve Parser from web-tree-sitter");
+  }
   await Parser.init();
 
+  const Language = Parser.Language;
   const [pythonLang, tsLang, jsLang] = await Promise.all([
     Language.load(resolveWasmPath("python")),
     Language.load(resolveWasmPath("typescript")),
